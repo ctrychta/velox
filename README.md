@@ -30,7 +30,7 @@ Once a `Velox` object is created benchmarks can be run by calling the `bench` me
 
 If the function being benchmarked needs to perform setup or teardown logic it can take a `velox::Stopwatch&` parameter and call the `measure` member function as in the below example:
 
-```cppp
+```cpp
 #include "velox_amalgamation.h"
 #include <iostream>
 #include <fstream>
