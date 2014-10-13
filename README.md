@@ -138,4 +138,4 @@ With microbenchmarks it's not uncommon for the optimizer to determine that some 
 Of course, whether or not you use `velox::optimization_barrier`, it's always a good idea to look at the generated assembly of your benchmarks to make sure they are testing what you expect.
 
 ##License
-velox is released under the [MIT](https://tldrlegal.com/license/mit-license) license.  The HtmlReporter uses the [jQuery](http://jquery.com/) and [HighCharts](http://www.highcharts.com/) libraries which are released under the MIT and [CC BY-NC 3.0](http://creativecommons.org/licenses/by-nc/3.0/) licenses respectively.
+velox is released under the [MIT](https://tldrlegal.com/license/mit-license) license.  The HtmlReporter uses the [jQuery](http://jquery.com/) and [HighCharts](http://www.highcharts.com/) libraries which are released under the [MIT](https://tldrlegal.com/license/mit-license) and [CC BY-NC 3.0](https://tldrlegal.com/license/creative-commons-attribution-noncommercial-%28cc-nc%29#summary) licenses respectively.
