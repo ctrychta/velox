@@ -29,6 +29,7 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
+#include <string>
 
 #ifdef _MSC_VER
 
@@ -76,7 +77,6 @@ namespace detail {
 
 #else
 
-#include <string>
 #include <cxxabi.h>
 
 #define VELOX_RVT(r) RangeValueType<r>

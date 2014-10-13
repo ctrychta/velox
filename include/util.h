@@ -7,6 +7,7 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
+#include <string>
 
 #ifdef _MSC_VER
 #include "msvc_util.h"

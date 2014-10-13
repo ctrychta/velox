@@ -1,7 +1,6 @@
 #ifndef VELOX_GCC_CLANG_UTIL_H_INCLUDED
 #define VELOX_GCC_CLANG_UTIL_H_INCLUDED
 
-#include <string>
 #include <cxxabi.h>
 
 #define VELOX_RVT(r) RangeValueType<r>
