@@ -11,7 +11,6 @@ Velox is available as a single header, [velox_amalgamation.h](https://raw.github
 #include "velox_amalgamation.h"
 #include <fstream>
 #include <iostream>
-#include <thread>
 
 int main() {
   velox::TextReporter text_reporter(std::cout);
@@ -24,7 +23,7 @@ int main() {
 }
 ```
 
-The `Velox` constructor takes a reporter and a configuration.  In this example a configuration wasn't provided so the default was used.  The template parameter is used to specify which clock should be used for taking measurements.  Currently, the clock defaults to std::chrono::high_resolution_clock for gcc and clang, and a custom clock based on QueryPerformanceCounter for MSVC (once the high_resolution clock is fixed in the next version of Visual Studio that will be the default).
+The `Velox` constructor takes a reporter and a configuration.  In this example a configuration wasn't provided so the default was used.  The template parameter is used to specify which clock should be used for taking measurements.  Currently, the clock defaults to `std::chrono::high_resolution_clock` for gcc and clang, and a custom clock based on QueryPerformanceCounter for MSVC (once the `high_resolution clock` is fixed in the next version of Visual Studio that will be the default).
 
 Once a `Velox` object is created benchmarks can be run by calling the `bench` member function and providing a benchmark name and a callable to benchmark.
 
