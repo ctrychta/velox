@@ -2861,7 +2861,7 @@ R"***^***(hData.samples.lowMildData);
 
             #sample-summary td:nth-child(2) {
                 color: #111;
-                background-color: #f7f7f7;
+                background-color: #F2F2F2;
             }
 
             #sample-summary, #analyzed-stats {
@@ -2895,7 +2895,7 @@ R"***^***(hData.samples.lowMildData);
 
             #analyzed-stats td:nth-child(3) {
                 color: #111;
-                background-color: #f7f7f7;
+                background-color: #F2F2F2;
             }
 
             #separator {
@@ -2916,6 +2916,20 @@ R"***^***(hData.samples.lowMildData);
 
             #samples, #raw-measurements {
                 height: 800px;
+            }
+
+            #info {
+                border-top: 1px solid #E4E4E4;
+                background-color: #F2F2F2;
+                padding: 10px;
+            }
+
+            #info dt {
+                font-weight:bold;
+            }
+
+            #info dd {
+                margin-bottom:5px;
             }
         </style>
 
@@ -3014,10 +3028,47 @@ R"***^***(hData.samples.lowMildData);
 
                 <div id="samples"></div>
 
-                <div id="raw-measurements"></div>
+                <div id="raw-m)***^***",
+R"***^***(easurements"></div>
             </main>
         </div>
-
+        <div id="info">
+            <h3>Statistics</h3>
+            <dl>
+                <dt>MAD (Median Absolute Deviation)</dt>
+                <dd>
+                    The interval (median - MAD, median + MAD) contains half of the measured values.  Unlike the standard deviation the MAD is resilient to outliers.
+                </dd>
+                <dt>LLS (Least Linear Squares)</dt>
+                <dd>
+                    An estimate of the time taken to run a single iteration of the benchmarked function which is calculated using  least linear squares regression (through the origin).  This value should be more accurate then some other statistics, such as mean, since it eliminates constant factors (such as measurement overhead).
+                </dd>
+                <dt>r&sup2;</dt>
+                <dd>
+                    A value in the interval [0, 1] which measures the accuracy of the calculated linear regression.  Any value below .99 indicates that the measurements may be suspect (perhaps other processes on the machine are influencing the benchmarks).
+                </dd>
+                <dt>lower/upper bound</dt>
+                <dd>
+                    Confidence intervals calculated using bootstrapping.
+                </dd>
+             </dl>
+             <h3>Charts</h3>
+             <dl>
+                <dt>Kernel Density Estimate</dt>
+                <dd>
+                    Shows the probability of a particular measurement occurring. The higher the probability density line the more likely a measurement is to occur.
+                </dd>
+                <dt>Samples</dt>
+                <dd>
+                    Plots the per iteration time of each measurement (total time / number of iterations).  If any of the values are classified as outliers according to the IQR criteria the relevant lines are shown as well.
+                </dd>
+                <dt>Raw Measurements</dt>
+                <dd>
+                    The raw measurements which were collected when benchmarking a function.  The x-axis is the number of iterations and the y-axis is the duration when running the function that number of iterations.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
+                </dd>
+             </dl>
+             You can hover over the any of the charts to see exact values and you can select areas if to zoom in.
+        </div>
     </body>
 </html>
 )***^***"
