@@ -610,7 +610,7 @@ R"***^***(easurements"></div>
                     The raw measurements which were collected when benchmarking a function.  The x-axis is the number of iterations and the y-axis is the duration when running the function that number of iterations.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and you can select areas if to zoom in.
+             You can hover over the any of the charts to see exact values and you can select areas to zoom in.
         </div>
     </body>
 </html>
