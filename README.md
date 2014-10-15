@@ -1,7 +1,7 @@
 velox
 =====
 
-This is a C++ micro-benchmarking library inspired by Haskell's [criterion](https://hackage.haskell.org/package/criterion).
+A C++ micro-benchmarking library inspired by Haskell's [criterion](https://hackage.haskell.org/package/criterion).
 
 ##Usage
 Velox is available as a single header, [velox_amalgamation.h](https://raw.githubusercontent.com/ctrychta/velox/master/amalgamation/velox_amalgamation.h), which can be included in your project.  It should work with gcc 4.8+, clang 3.4+, and VS2013+.
@@ -35,40 +35,29 @@ If the function being benchmarked needs to perform setup or teardown logic it ca
 #include <fstream>
 
 std::vector<int> create_test_vector() {
-  std::vector<int> v(5000);
+  std::vector<int> v(1000000);
   std::iota(v.begin(), v.end(), 0);
-  std::shuffle(v.begin(), v.end(), std::mt19937(42));
   return v;
 }
 
-int compare_ints_desc(const void *a, const void *b) {
-  int lhs = *static_cast<const int *>(a);
-  int rhs = *static_cast<const int *>(b);
-  if (lhs > rhs)
-    return -1;
-  if (lhs < rhs)
-    return 1;
-  return 0;
+void linear_search(velox::Stopwatch &sw) {
+  auto v = create_test_vector();
+  sw.measure([&] { velox::optimization_barrier(std::find(v.begin(), v.end(), 984760)); });
 }
 
-void c_sort(velox::Stopwatch &sw) {
+void binary_search(velox::Stopwatch &sw) {
   auto v = create_test_vector();
-  sw.measure([&] { std::qsort(v.data(), v.size(), sizeof(int), compare_ints_desc); });
-}
-
-void cpp_sort(velox::Stopwatch &sw) {
-  auto v = create_test_vector();
-  sw.measure([&] { std::sort(v.begin(), v.end(), std::greater<int>()); });
+  sw.measure([&] { velox::optimization_barrier(std::binary_search(v.begin(), v.end(), 984760)); });
 }
 
 int main() {
   velox::TextReporter text_reporter{std::cout};
-  std::ofstream fout("sort_example.html");
+  std::ofstream fout("search_example.html");
   velox::HtmlReporter html_reporter{fout};
   velox::MultiReporter reporter(text_reporter, html_reporter);
 
   velox::Velox<> v(reporter);
-  v.bench("qsort", c_sort).bench("std::sort", cpp_sort);
+  v.bench("linear search", linear_search).bench("binary search", binary_search);
 
   return 0;
 }
@@ -82,46 +71,45 @@ Outputs a summary of the different statistics calculated for a particular benchm
 
 ```
 Benchmarking with `std::chrono::_V2::system_clock` which is unsteady
-Benchmarking qsort
+Benchmarking linear search
 > Warming up for 5000 ms
-> Collecting 100 measurements in estimated 10.758 s
-> Found 10 outliers among 100 measurements (10%)
-  > 3 (3%) high mild
-  > 7 (7%) high severe
+> Collecting 100 measurements in estimated 10.981 s
+> Found 13 outliers among 100 measurements (13%)
+  > 7 (7%) high mild
+  > 6 (6%) high severe
 > estimating statistics
   > bootstrapping sample with 100000 resamples
-  > mean   192.18 us +/- 357.98 ns [191.55 us 192.94 us] 95% CI
-  > median 191.01 us +/- 131.88 ns [190.75 us 191.24 us] 95% CI
-  > SD     3.5976 us +/- 797.00 ns [1.9055 us 5.0148 us] 95% CI
-  > MAD    887.10 ns +/- 166.35 ns [597.84 ns 1.2642 us] 95% CI
-  > LLS    190.75 us +/- 78.311 ns [190.62 us 190.92 us] 95% CI
-  > r^2    0.9999856 +/- 3.728778e-06 [0.9999774 0.9999917] 95% CI
+  > mean   236.31 us +/- 157.76 ns [236.03 us 236.65 us] 95% CI
+  > median 235.81 us +/- 62.929 ns [235.70 us 235.98 us] 95% CI
+  > SD     1.5892 us +/- 364.25 ns [924.04 ns 2.2553 us] 95% CI
+  > MAD    568.98 ns +/- 78.268 ns [408.01 ns 721.51 ns] 95% CI
+  > LLS    235.98 us +/- 121.75 ns [235.77 us 236.24 us] 95% CI
+  > r^2    0.9999847 +/- 6.430088e-06 [0.9999709 0.9999954] 95% CI
 
-Benchmarking std::sort
+Benchmarking binary search
 > Warming up for 5000 ms
-> Collecting 100 measurements in estimated 10.287 s
-> Found 9 outliers among 100 measurements (9%)
-  > 2 (2%) high mild
-  > 7 (7%) high severe
+> Collecting 100 measurements in estimated 10.198 s
+> Found 13 outliers among 100 measurements (13%)
+  > 5 (5%) high mild
+  > 8 (8%) high severe
 > estimating statistics
   > bootstrapping sample with 100000 resamples
-  > mean   77.274 us +/- 94.431 ns [77.107 us 77.474 us] 95% CI
-  > median 76.960 us +/- 37.374 ns [76.890 us 77.053 us] 95% CI
-  > SD     946.10 ns +/- 202.18 ns [510.73 ns 1.3030 us] 95% CI
-  > MAD    239.26 ns +/- 48.988 ns [146.12 ns 333.07 ns] 95% CI
-  > LLS    76.918 us +/- 25.987 ns [76.872 us 76.973 us] 95% CI
-  > r^2    0.9999909 +/- 2.117352e-06 [0.9999865 0.9999948] 95% CI
-
+  > mean   21.112 ns +/- 7.3282 ps [21.100 ns 21.128 ns] 95% CI
+  > median 21.091 ns +/- 1.8364 ps [21.088 ns 21.094 ns] 95% CI
+  > SD     73.463 ps +/- 20.490 ps [36.438 ps 109.48 ps] 95% CI
+  > MAD    18.101 ps +/- 2.7952 ps [12.442 ps 23.078 ps] 95% CI
+  > LLS    21.097 ns +/- 3.0996 ps [21.092 ns 21.104 ns] 95% CI
+  > r^2    0.9999979 +/- 1.217583e-06 [0.999995 0.9999994] 95% CI
 ```
 
 For each benchmark velox begins by warming up for a configurable duration, it then determines how many iterations to run for each measurement, estimates the measurement time, and collects the measurements.
 
-Once the measurements are collected outliers are classified as either low severe(Q1 - 3 * IQR), low mild(Q1 - 1.5 * IQR), high mild(Q3 + 1.5 * IQR), or high severe(Q3 + 3.0 * IQR).
+Once the measurements are collected outliers are classified as either low severe(Q1 - 3 * IQR), low mild(Q1 - 1.5 * IQR), high mild(Q3 + 1.5 * IQR), or high severe(Q3 + 3 * IQR).
 
 Next, the collected measurements are [bootstrapped](http://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29) with a configurable number of resamples(100,000 by default).  After the bootstrapping is complete the [mean](http://en.wikipedia.org/wiki/Mean), [median](http://en.wikipedia.org/wiki/Median), [standard deviation](http://en.wikipedia.org/wiki/Standard_deviation),  [median absolute deviation](http://en.wikipedia.org/wiki/Median_absolute_deviation),  [linear least squares](http://en.wikipedia.org/wiki/Ordinary_least_squares), and [r^2](http://en.wikipedia.org/wiki/Coefficient_of_determination) are output along the the calculated [confidence intervals](http://en.wikipedia.org/wiki/Confidence_interval).
 
 ###HtmlReporter
-Generates an [HTML report](http://ctrychta.github.io/velox/sort_example.html) containing the same information the TextReporter outputs and a few different charts of the collected data.
+Generates an [HTML report](http://ctrychta.github.io/velox/search_example.html) containing the same information the TextReporter outputs and a few different charts of the collected data.
 
 The [kernel density estimate](http://en.wikipedia.org/wiki/Kernel_density_estimation) shows the probability of a particular measurement occurring.  The higher the probability density line the more likely a measurement is to occur.
 
