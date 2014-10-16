@@ -35,12 +35,20 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <process.h>
 
 // This is a hack because MSVC doesn't handle decltype in template aliases
 // correctly
 #define VELOX_RVT(r) Unqual<decltype(*adl::adl_begin(std::declval<r>()))>
 
 namespace velox {
+template <class T>
+void optimization_barrier(T &&t) {
+  if (volatile bool b = false) {
+    _exit(*reinterpret_cast<const char *>(&t));
+  }
+}
+
 // On windows XP and up these functions are documented to never fail so the
 // return values are not checked
 namespace {

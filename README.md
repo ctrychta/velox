@@ -106,24 +106,24 @@ For each benchmark velox begins by warming up for a configurable duration, it th
 
 Once the measurements are collected outliers are classified as either low severe(Q1 - 3 * IQR), low mild(Q1 - 1.5 * IQR), high mild(Q3 + 1.5 * IQR), or high severe(Q3 + 3 * IQR).
 
-Next, the collected measurements are [bootstrapped](http://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29) with a configurable number of resamples(100,000 by default).  After the bootstrapping is complete the [mean](http://en.wikipedia.org/wiki/Mean), [median](http://en.wikipedia.org/wiki/Median), [standard deviation](http://en.wikipedia.org/wiki/Standard_deviation),  [median absolute deviation](http://en.wikipedia.org/wiki/Median_absolute_deviation),  [linear least squares](http://en.wikipedia.org/wiki/Ordinary_least_squares), and [r^2](http://en.wikipedia.org/wiki/Coefficient_of_determination) are output along the the calculated [confidence intervals](http://en.wikipedia.org/wiki/Confidence_interval).
+Next, the collected measurements are [bootstrapped](http://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29) with a configurable number of resamples(100,000 by default).  After the bootstrapping is complete the [mean](http://en.wikipedia.org/wiki/Mean), [median](http://en.wikipedia.org/wiki/Median), [standard deviation](http://en.wikipedia.org/wiki/Standard_deviation),  [median absolute deviation](http://en.wikipedia.org/wiki/Median_absolute_deviation),  [linear least squares](http://en.wikipedia.org/wiki/Ordinary_least_squares), and [r^2](http://en.wikipedia.org/wiki/Coefficient_of_determination) are output along with the calculated [confidence intervals](http://en.wikipedia.org/wiki/Confidence_interval).
 
 ###HtmlReporter
 Generates an [HTML report](http://ctrychta.github.io/velox/search_example.html) containing the same information the TextReporter outputs and a few different charts of the collected data.
 
 The [kernel density estimate](http://en.wikipedia.org/wiki/Kernel_density_estimation) shows the probability of a particular measurement occurring.  The higher the probability density line the more likely a measurement is to occur.
 
-The samples chart plots each of the measurements taken as the `total time / number of iterations`.  It also has lines to show any outliers.
+The samples chart plots each of the measurements taken as the `total time / number of iterations`.  It also has lines to show any outliers according to the IQR criteria.
 
 The raw measurements chart shows the different measurements collected while benchmarking the function and the calculated regression line.
 
 ###MultiReporter
 A helper class which can be constructed from multiple reporters which will forward calls to all of the contained reporters.  This is used because currently the `Velox` class supports a single reporter.
 
-##Optimizer
-With microbenchmarks it's not uncommon for the optimizer to determine that some or all of the code being benchmarked is not being used and eliminate it.  To help prevent this velox provides the `velox::optimization_barrier` function which can be called with a variable to prevent it being removed by dead code elimination or other optimizations.  Currently, this function is only available when using gcc or clang.  I'm still investigating how to implement this for Visual Studio (if you have any ideas please let me know). 
+##optimization_barrier
+With micro-benchmarks it's not uncommon for the optimizer to determine that some or all of the code being benchmarked is not being used and eliminate it.  To help prevent this velox provides the `velox::optimization_barrier` function which can be used to tell the compiler that a variable or return value is used in order to prevent it being removed by [DCE](http://en.wikipedia.org/wiki/Dead_code_elimination).  The implementation of this function for gcc and clang should have no overhead, while the implementation for MSVC has a small amount of overhead (a couple of mov's and a test).
 
-Of course, whether or not you use `velox::optimization_barrier`, it's always a good idea to look at the generated assembly of your benchmarks to make sure they are testing what you expect.
+Of course, whether or not you use `velox::optimization_barrier`, it's always a good idea to look at the generated assembly of your benchmarks to ensure they are testing what you expect.
 
 ##License
 velox is released under the [MIT](https://tldrlegal.com/license/mit-license) license.  The HtmlReporter uses the [jQuery](http://jquery.com/) and [HighCharts](http://www.highcharts.com/) libraries which are released under the [MIT](https://tldrlegal.com/license/mit-license) and [CC BY-NC 3.0](https://tldrlegal.com/license/creative-commons-attribution-noncommercial-%28cc-nc%29#summary) licenses respectively.
