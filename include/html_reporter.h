@@ -15,9 +15,11 @@ struct HtmlReporter : Reporter {
 
   void suite_starting(const std::string &, bool) override { os_ << template_begin() << "\n"; }
 
-  void benchmark_starting(const std::string &name) override {
+  void benchmark_starting(const std::string &name) override { current_benchmark_ = name; }
+
+  void warm_up_ended(const ItersForDurationNs &) override {
     os_ << "benchmark_" << ++num_benchmarks << " : {\n";
-    os_ << "    name : '" << name << "',\n";
+    os_ << "    name : '" << current_benchmark_ << "',\n";
   }
 
   void measurement_collection_ended(const Measurements &measurements,
@@ -220,6 +222,7 @@ private:
 
 private:
   std::ostream &os_;
+  std::string current_benchmark_;
   std::uint32_t num_benchmarks;
 };
 #ifdef __clang__

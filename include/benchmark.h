@@ -14,7 +14,7 @@ struct Benchmark {
 
   Benchmark &operator=(const Benchmark &rhs) = delete;
 
-  ItersForDurationNs warm_up(const Duration<C> duration) {
+  std::pair<ItersForDurationNs, bool> warm_up(const Duration<C> duration) {
     std::uint64_t iters = 1;
 
     const auto start = C::now();
@@ -23,10 +23,15 @@ struct Benchmark {
       const auto elapsed = run(iters);
 
       if (C::now() - start > duration) {
-        return {iters, elapsed};
+        return {ItersForDurationNs(iters, elapsed), true};
       }
 
+      const auto prev_iters = iters;
       iters *= 2;
+
+      if (iters == 0) {
+        return {ItersForDurationNs(prev_iters, elapsed), false};
+      }
     }
   }
 
@@ -63,12 +68,18 @@ inline Times times_from_measurements(const Measurements &measurements) {
 }
 
 template <class C, class F>
-Measurements measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
+std::pair<Measurements, bool> measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
   reporter.warm_up_starting(config.warm_up_time());
 
   Benchmark<C, F> b(f);
 
-  const auto wu = b.warm_up(config.warm_up_time());
+  const auto wu_result = b.warm_up(config.warm_up_time());
+  const auto &wu = wu_result.first;
+
+  if (!wu_result.second) {
+    reporter.warm_up_failed(wu);
+    return {Measurements(), false};
+  }
 
   reporter.warm_up_ended(wu);
 
@@ -92,14 +103,19 @@ Measurements measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
 
   reporter.measurement_collection_starting(nm, estimated_time);
 
-  return b.bench(nm, base_iters);
+  return {b.bench(nm, base_iters), true};
 }
 
 template <class C, class F>
 void benchmark(const std::string &name, F &&f, const VeloxConfig &config, Reporter &reporter) {
   reporter.benchmark_starting(name);
 
-  const auto measurements = measure<C>(std::forward<F>(f), config, reporter);
+  const auto measure_result = measure<C>(std::forward<F>(f), config, reporter);
+  if (!measure_result.second) {
+    return;
+  }
+
+  const auto &measurements = measure_result.first;
   const auto times = times_from_measurements(measurements);
   const Outliers outliers(times);
 
@@ -118,9 +134,9 @@ template <class C>
 FpNs estimate_clock_cost(const VeloxConfig &config, Reporter &reporter) {
   reporter.estimate_clock_cost_starting();
 
-  const auto measurements = measure<C>([]() { C::now(); }, config, reporter);
-  const auto times = times_from_measurements(measurements);
-  const auto cost = median(times);
+  const auto measure_result = measure<C>([]() { C::now(); }, config, reporter);
+  const auto cost =
+      measure_result.second ? median(times_from_measurements(measure_result.first)) : FpNs{0.0};
 
   reporter.estimate_clock_cost_ended(cost);
 

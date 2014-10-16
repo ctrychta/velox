@@ -30,6 +30,14 @@ struct TextReporter : Reporter {
 
   void warm_up_starting(Ms ms) override { os_ << "> Warming up for " << ms.count() << " ms\n"; }
 
+  void warm_up_failed(const ItersForDurationNs &wu) override {
+    os_ << "> Warm up failed\n";
+    os_ << "  > " << wu.iters() << " iterations of the function took ";
+    format_time(os_, wu.duration());
+    os_ << "\n";
+    os_ << "  > The function is unable to be benchmarked because it takes so little time.\n";
+  }
+
   void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) override {
     os_ << "> Collecting " << sample_size << " measurements in estimated ";
 

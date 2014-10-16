@@ -1036,6 +1036,7 @@ struct Reporter {
 
   virtual void warm_up_starting(Ms ms) { unused(ms); }
   virtual void warm_up_ended(const ItersForDurationNs &wu) { unused(wu); }
+  virtual void warm_up_failed(const ItersForDurationNs &wu) { unused(wu); }
 
   virtual void benchmark_starting(const std::string &name) { unused(name); }
   virtual void benchmark_ended() {}
@@ -1243,7 +1244,7 @@ struct Benchmark {
 
   Benchmark &operator=(const Benchmark &rhs) = delete;
 
-  ItersForDurationNs warm_up(const Duration<C> duration) {
+  std::pair<ItersForDurationNs, bool> warm_up(const Duration<C> duration) {
     std::uint64_t iters = 1;
 
     const auto start = C::now();
@@ -1252,10 +1253,15 @@ struct Benchmark {
       const auto elapsed = run(iters);
 
       if (C::now() - start > duration) {
-        return {iters, elapsed};
+        return {ItersForDurationNs(iters, elapsed), true};
       }
 
+      const auto prev_iters = iters;
       iters *= 2;
+
+      if (iters == 0) {
+        return {ItersForDurationNs(prev_iters, elapsed), false};
+      }
     }
   }
 
@@ -1292,12 +1298,18 @@ inline Times times_from_measurements(const Measurements &measurements) {
 }
 
 template <class C, class F>
-Measurements measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
+std::pair<Measurements, bool> measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
   reporter.warm_up_starting(config.warm_up_time());
 
   Benchmark<C, F> b(f);
 
-  const auto wu = b.warm_up(config.warm_up_time());
+  const auto wu_result = b.warm_up(config.warm_up_time());
+  const auto &wu = wu_result.first;
+
+  if (!wu_result.second) {
+    reporter.warm_up_failed(wu);
+    return {Measurements(), false};
+  }
 
   reporter.warm_up_ended(wu);
 
@@ -1321,14 +1333,19 @@ Measurements measure(F &&f, const VeloxConfig &config, Reporter &reporter) {
 
   reporter.measurement_collection_starting(nm, estimated_time);
 
-  return b.bench(nm, base_iters);
+  return {b.bench(nm, base_iters), true};
 }
 
 template <class C, class F>
 void benchmark(const std::string &name, F &&f, const VeloxConfig &config, Reporter &reporter) {
   reporter.benchmark_starting(name);
 
-  const auto measurements = measure<C>(std::forward<F>(f), config, reporter);
+  const auto measure_result = measure<C>(std::forward<F>(f), config, reporter);
+  if (!measure_result.second) {
+    return;
+  }
+
+  const auto &measurements = measure_result.first;
   const auto times = times_from_measurements(measurements);
   const Outliers outliers(times);
 
@@ -1347,9 +1364,9 @@ template <class C>
 FpNs estimate_clock_cost(const VeloxConfig &config, Reporter &reporter) {
   reporter.estimate_clock_cost_starting();
 
-  const auto measurements = measure<C>([]() { C::now(); }, config, reporter);
-  const auto times = times_from_measurements(measurements);
-  const auto cost = median(times);
+  const auto measure_result = measure<C>([]() { C::now(); }, config, reporter);
+  const auto cost =
+      measure_result.second ? median(times_from_measurements(measure_result.first)) : FpNs{0.0};
 
   reporter.estimate_clock_cost_ended(cost);
 
@@ -1383,6 +1400,14 @@ struct TextReporter : Reporter {
   }
 
   void warm_up_starting(Ms ms) override { os_ << "> Warming up for " << ms.count() << " ms\n"; }
+
+  void warm_up_failed(const ItersForDurationNs &wu) override {
+    os_ << "> Warm up failed\n";
+    os_ << "  > " << wu.iters() << " iterations of the function took ";
+    format_time(os_, wu.duration());
+    os_ << "\n";
+    os_ << "  > The function is unable to be benchmarked because it takes so little time.\n";
+  }
 
   void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) override {
     os_ << "> Collecting " << sample_size << " measurements in estimated ";
@@ -1484,9 +1509,11 @@ struct HtmlReporter : Reporter {
 
   void suite_starting(const std::string &, bool) override { os_ << template_begin() << "\n"; }
 
-  void benchmark_starting(const std::string &name) override {
+  void benchmark_starting(const std::string &name) override { current_benchmark_ = name; }
+
+  void warm_up_ended(const ItersForDurationNs &) override {
     os_ << "benchmark_" << ++num_benchmarks << " : {\n";
-    os_ << "    name : '" << name << "',\n";
+    os_ << "    name : '" << current_benchmark_ << "',\n";
   }
 
   void measurement_collection_ended(const Measurements &measurements,
@@ -3088,6 +3115,7 @@ R"***^***(easurements"></div>
 
 private:
   std::ostream &os_;
+  std::string current_benchmark_;
   std::uint32_t num_benchmarks;
 };
 #ifdef __clang__
@@ -3119,6 +3147,10 @@ struct MultiReporter : Reporter {
 
   void warm_up_ended(const ItersForDurationNs &wu) override {
     call(fp(&Reporter::warm_up_ended), wu);
+  }
+
+  void warm_up_failed(const ItersForDurationNs &wu) override {
+    call(fp(&Reporter::warm_up_failed), wu);
   }
 
   void benchmark_starting(const std::string &name) override {

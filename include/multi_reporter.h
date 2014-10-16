@@ -29,6 +29,10 @@ struct MultiReporter : Reporter {
     call(fp(&Reporter::warm_up_ended), wu);
   }
 
+  void warm_up_failed(const ItersForDurationNs &wu) override {
+    call(fp(&Reporter::warm_up_failed), wu);
+  }
+
   void benchmark_starting(const std::string &name) override {
     call(fp(&Reporter::benchmark_starting), name);
   }

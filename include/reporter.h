@@ -25,6 +25,7 @@ struct Reporter {
 
   virtual void warm_up_starting(Ms ms) { unused(ms); }
   virtual void warm_up_ended(const ItersForDurationNs &wu) { unused(wu); }
+  virtual void warm_up_failed(const ItersForDurationNs &wu) { unused(wu); }
 
   virtual void benchmark_starting(const std::string &name) { unused(name); }
   virtual void benchmark_ended() {}
