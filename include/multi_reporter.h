@@ -4,6 +4,10 @@
 #include "reporter.h"
 
 namespace velox {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
 struct MultiReporter : Reporter {
   template <class... Rs>
   MultiReporter(Rs &... rs) {
@@ -88,6 +92,9 @@ private:
 private:
   std::vector<Reporter *> reporters_;
 };
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 #endif // VELOX_MULTI_REPORTER_H_INCLUDED
