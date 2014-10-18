@@ -94,6 +94,30 @@ inline TimeScaler scaler_for_time(const FpNs ns) {
     return TimeScaler("s", .000000001);
   }
 }
+
+inline std::string js_string_escape(const std::string &s) {
+  std::string escaped;
+  escaped.reserve(s.size());
+
+  for (auto c : s) {
+    switch (c) {
+    case '\'':
+      escaped += "\\'";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    case '\\':
+      escaped += "\\\\";
+      break;
+    default:
+      escaped += c;
+      break;
+    }
+  }
+
+  return escaped;
+}
 }
 
 #endif // VELOX_FORMAT_H_INCLUDED

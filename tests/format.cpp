@@ -113,3 +113,9 @@ TEST_CASE("scaler_for_time") {
     REQUIRE(9.4846 == Approx(scaler.scale(FpNs{9484613623.59})));
   }
 }
+
+TEST_CASE("js_string_escape") {
+  const std::string unescaped("a'b\"c\\d");
+  const std::string expected("a\\'b\\\"c\\\\d");
+  REQUIRE(expected == js_string_escape(unescaped));
+}

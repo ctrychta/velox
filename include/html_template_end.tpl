@@ -306,12 +306,11 @@ R"***^***(ata);
                     };
                 }
             
-                var benchmarkList = ''
                 for (var b in benchmarkData) {
-                    benchmarkList += '<li><a id="' + b + '" href="#">' + benchmarkData[b].name + '</a></li>';
-                }                
-                
-                $('#benchmarks').append(benchmarkList);  
+                    $('<li/>', {
+                        html: $('<a/>', {id: b, href: '#', text: benchmarkData[b].name}) 
+                    }).appendTo('#benchmarks');
+                }  
                 
                 $('#benchmarks a').click(function(e) {
                     e.preventDefault();
@@ -567,10 +566,10 @@ R"***^***(ata);
 	                </tbody>
                 </table>
 
-  )***^***",
-R"***^***(              <div id="separator"></div>
+                <div id="separator"></div>
                 
-                <div id="kde"></div>
+         )***^***",
+R"***^***(       <div id="kde"></div>
 
                 <div id="samples"></div>
                 

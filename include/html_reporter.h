@@ -19,7 +19,7 @@ struct HtmlReporter : Reporter {
 
   void warm_up_ended(const ItersForDurationNs &) override {
     os_ << "benchmark_" << ++num_benchmarks << " : {\n";
-    os_ << "    name : '" << current_benchmark_ << "',\n";
+    os_ << "    name : '" << js_string_escape(current_benchmark_) << "',\n";
   }
 
   void measurement_collection_ended(const Measurements &measurements,

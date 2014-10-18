@@ -1063,12 +1063,11 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
                     };
                 }
             
-                var benchmarkList = ''
                 for (var b in benchmarkData) {
-                    benchmarkList += '<li><a id="' + b + '" href="#">' + benchmarkData[b].name + '</a></li>';
-                }                
-                
-                $('#benchmarks').append(benchmarkList);  
+                    $('<li/>', {
+                        html: $('<a/>', {id: b, href: '#', text: benchmarkData[b].name}) 
+                    }).appendTo('#benchmarks');
+                }  
                 
                 $('#benchmarks a').click(function(e) {
                     e.preventDefault();
