@@ -993,6 +993,8 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
                     }
                     
                     // Set bootstrapped statistics
+                    $('#lb-title').prop('title', benchData['confidence_level']);
+                    $('#ub-title').prop('title', benchData['confidence_level']);
                     
                     var stats = ['mean', 'median', 'sd', 'mad', 'lls', 'r2'];
                     for (var i = 0; i < stats.length; ++i) {
@@ -1275,12 +1277,12 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
                 </table>
                             
                 <table id="analyzed-stats">
-                    <caption>Bootstrapped Statistics</caption>
+                  <caption>Bootstrapped Statistics</caption>
 	                <thead>
-	                    <th></th>
-	                    <th>lower bound</th>
+	                  <th></th>
+	                  <th id="lb-title">lower bound</th>
 		                <th>sample estimate</th>		                
-		                <th>upper bound</th>
+		                <th id="ub-title">upper bound</th>
 	                </thead>
 	                <tbody>
 		                <tr>

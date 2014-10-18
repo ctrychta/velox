@@ -235,6 +235,8 @@ R"***^***(
                     }
                     
                     // Set bootstrapped statistics
+                    $('#lb-title').prop('title', benchData['confidence_level']);
+                    $('#ub-title').prop('title', benchData['confidence_level']);
                     
                     var stats = ['mean', 'median', 'sd', 'mad', 'lls', 'r2'];
                     for (var i = 0; i < stats.length; ++i) {
@@ -255,10 +257,10 @@ R"***^***(
                     kdeChart.redraw(false);
                     
                     setSeries(samplesChart.get('sample'), benchData.samples.data);
-                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereData);
+                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereD)***^***",
+R"***^***(ata);
                     setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
-                    setSeries(samplesChart.get('lowMild'), benc)***^***",
-R"***^***(hData.samples.lowMildData);
+                    setSeries(samplesChart.get('lowMild'), benchData.samples.lowMildData);
                     setSeries(samplesChart.get('lowSevere'), benchData.samples.lowSevereData);
                     samplesChart.redraw(false);
                     
@@ -518,12 +520,12 @@ R"***^***(hData.samples.lowMildData);
                 </table>
                             
                 <table id="analyzed-stats">
-                    <caption>Bootstrapped Statistics</caption>
+                  <caption>Bootstrapped Statistics</caption>
 	                <thead>
-	                    <th></th>
-	                    <th>lower bound</th>
+	                  <th></th>
+	                  <th id="lb-title">lower bound</th>
 		                <th>sample estimate</th>		                
-		                <th>upper bound</th>
+		                <th id="ub-title">upper bound</th>
 	                </thead>
 	                <tbody>
 		                <tr>
@@ -565,14 +567,14 @@ R"***^***(hData.samples.lowMildData);
 	                </tbody>
                 </table>
 
-                <div id="separator"></div>
+  )***^***",
+R"***^***(              <div id="separator"></div>
                 
                 <div id="kde"></div>
 
                 <div id="samples"></div>
                 
-                <div id="raw-m)***^***",
-R"***^***(easurements"></div>
+                <div id="raw-measurements"></div>
             </main>
         </div>
         <div id="info">

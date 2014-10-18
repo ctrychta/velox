@@ -35,6 +35,9 @@ struct HtmlReporter : Reporter {
   }
 
   void estimate_statistics_ended(const EstimatedStatistics &statistics) override {
+    os_ << "    confidence_level : '" << statistics.mean().estimate().confidence_level() * 100
+        << "% CI',\n";
+
     auto format_estimate =
         [this](const char *const name, const Estimate<FpNs> &e) { format(name, e, format_time); };
 
