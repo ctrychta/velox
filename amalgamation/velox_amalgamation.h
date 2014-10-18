@@ -1017,6 +1017,30 @@ inline TimeScaler scaler_for_time(const FpNs ns) {
     return TimeScaler("s", .000000001);
   }
 }
+
+inline std::string js_string_escape(const std::string &s) {
+  std::string escaped;
+  escaped.reserve(s.size());
+
+  for (auto c : s) {
+    switch (c) {
+    case '\'':
+      escaped += "\\'";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    case '\\':
+      escaped += "\\\\";
+      break;
+    default:
+      escaped += c;
+      break;
+    }
+  }
+
+  return escaped;
+}
 }
 
 namespace velox {
@@ -1513,7 +1537,7 @@ struct HtmlReporter : Reporter {
 
   void warm_up_ended(const ItersForDurationNs &) override {
     os_ << "benchmark_" << ++num_benchmarks << " : {\n";
-    os_ << "    name : '" << current_benchmark_ << "',\n";
+    os_ << "    name : '" << js_string_escape(current_benchmark_) << "',\n";
   }
 
   void measurement_collection_ended(const Measurements &measurements,
@@ -1529,6 +1553,9 @@ struct HtmlReporter : Reporter {
   }
 
   void estimate_statistics_ended(const EstimatedStatistics &statistics) override {
+    os_ << "    confidence_level : '" << statistics.mean().estimate().confidence_level() * 100
+        << "% CI',\n";
+
     auto format_estimate =
         [this](const char *const name, const Estimate<FpNs> &e) { format(name, e, format_time); };
 
@@ -2727,6 +2754,8 @@ R"***^***(
                     }
 
                     // Set bootstrapped statistics
+                    $('#lb-title').prop('title', benchData['confidence_level']);
+                    $('#ub-title').prop('title', benchData['confidence_level']);
 
                     var stats = ['mean', 'median', 'sd', 'mad', 'lls', 'r2'];
                     for (var i = 0; i < stats.length; ++i) {
@@ -2747,10 +2776,10 @@ R"***^***(
                     kdeChart.redraw(false);
 
                     setSeries(samplesChart.get('sample'), benchData.samples.data);
-                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereData);
+                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereD)***^***",
+R"***^***(ata);
                     setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
-                    setSeries(samplesChart.get('lowMild'), benc)***^***",
-R"***^***(hData.samples.lowMildData);
+                    setSeries(samplesChart.get('lowMild'), benchData.samples.lowMildData);
                     setSeries(samplesChart.get('lowSevere'), benchData.samples.lowSevereData);
                     samplesChart.redraw(false);
 
@@ -2796,12 +2825,11 @@ R"***^***(hData.samples.lowMildData);
                     };
                 }
 
-                var benchmarkList = ''
                 for (var b in benchmarkData) {
-                    benchmarkList += '<li><a id="' + b + '" href="#">' + benchmarkData[b].name + '</a></li>';
+                    $('<li/>', {
+                        html: $('<a/>', {id: b, href: '#', text: benchmarkData[b].name})
+                    }).appendTo('#benchmarks');
                 }
-
-                $('#benchmarks').append(benchmarkList);
 
                 $('#benchmarks a').click(function(e) {
                     e.preventDefault();
@@ -3010,12 +3038,12 @@ R"***^***(hData.samples.lowMildData);
                 </table>
 
                 <table id="analyzed-stats">
-                    <caption>Bootstrapped Statistics</caption>
+                  <caption>Bootstrapped Statistics</caption>
 	                <thead>
-	                    <th></th>
-	                    <th>lower bound</th>
+	                  <th></th>
+	                  <th id="lb-title">lower bound</th>
 		                <th>sample estimate</th>
-		                <th>upper bound</th>
+		                <th id="ub-title">upper bound</th>
 	                </thead>
 	                <tbody>
 		                <tr>
@@ -3059,12 +3087,12 @@ R"***^***(hData.samples.lowMildData);
 
                 <div id="separator"></div>
 
-                <div id="kde"></div>
+         )***^***",
+R"***^***(       <div id="kde"></div>
 
                 <div id="samples"></div>
 
-                <div id="raw-m)***^***",
-R"***^***(easurements"></div>
+                <div id="raw-measurements"></div>
             </main>
         </div>
         <div id="info">
