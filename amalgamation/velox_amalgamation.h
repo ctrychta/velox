@@ -30,6 +30,9 @@
 #include <cassert>
 #include <chrono>
 #include <string>
+#include <sstream>
+#include <initializer_list>
+#include <atomic>
 
 #ifdef _MSC_VER
 
@@ -44,8 +47,11 @@
 namespace velox {
 template <class T>
 void optimization_barrier(T &&t) {
+  const char *p = reinterpret_cast<const char *>(&t);
+  std::atomic_signal_fence(std::memory_order_seq_cst);
+
   if (volatile bool b = false) {
-    _exit(*reinterpret_cast<const char *>(&t));
+    _exit(*p);
   }
 }
 
@@ -136,6 +142,53 @@ template <class... Ts>
 void unused(Ts &&...) {
 }
 
+template <class T>
+void unused(std::initializer_list<T> &&) {
+}
+
+template <std::size_t...>
+struct Seq {
+  using type = Seq;
+};
+
+template <class S1, class S2>
+struct SeqBuilder;
+
+template <std::size_t... I1, std::size_t... I2>
+struct SeqBuilder<Seq<I1...>, Seq<I2...>> : Seq<I1..., (sizeof...(I1)+I2)...> {};
+
+template <class S1, class S2>
+using BuildSeq = Invoke<SeqBuilder<S1, S2>>;
+
+template <std::size_t N>
+struct SeqMaker;
+
+template <std::size_t N>
+using MakeSeq = Invoke<SeqMaker<N>>;
+
+template <std::size_t N>
+struct SeqMaker : BuildSeq<MakeSeq<N / 2>, MakeSeq<N - N / 2>> {};
+
+template <>
+struct SeqMaker<0> : Seq<> {};
+template <>
+struct SeqMaker<1> : Seq<0> {};
+
+template <bool B, class...>
+struct DependentBool : std::integral_constant<bool, B> {};
+
+template <bool B, class... Ts>
+using Bool = Invoke<DependentBool<B, Ts...>>;
+
+template <class If, class Then, class Else>
+using Conditional = Invoke<std::conditional<If::value, Then, Else>>;
+
+template <class... Ts>
+struct All : Bool<true> {};
+
+template <class Head, class... Tail>
+struct All<Head, Tail...> : Conditional<Head, All<Tail...>, Bool<false>> {};
+
 namespace adl {
   using std::begin;
   template <class Range, class Ret = decltype(begin(std::declval<Range>()))>
@@ -163,6 +216,17 @@ struct CallTester {
 
 template <class F, class... Args>
 struct IsCallable : decltype(CallTester::test<F, Args...>(0)) {};
+
+struct StreamInsertTester {
+  template <class T>
+  static decltype(std::declval<std::ostream &>() << std::declval<T>(), std::true_type()) test(int);
+
+  template <class T>
+  static std::false_type test(...);
+};
+
+template <class T>
+struct IsStreamInsertable : decltype(StreamInsertTester::test<T>(0)) {};
 
 using Ns = std::chrono::nanoseconds;
 using FpNs = std::chrono::duration<double, std::nano>;
@@ -3100,7 +3164,7 @@ R"***^***(       <div id="kde"></div>
             <dl>
                 <dt>MAD (Median Absolute Deviation)</dt>
                 <dd>
-                    The interval (median - MAD, median + MAD) contains half of the measured values.  Unlike the standard deviation the MAD is resilient to outliers.
+                    The interval [median - MAD, median + MAD] contains half of the measured values.  Unlike the standard deviation the MAD is resilient to outliers.
                 </dd>
                 <dt>LLS (Least Linear Squares)</dt>
                 <dd>
@@ -3112,7 +3176,7 @@ R"***^***(       <div id="kde"></div>
                 </dd>
                 <dt>lower/upper bound</dt>
                 <dd>
-                    Confidence intervals calculated using bootstrapping.
+                    Confidence intervals calculated using bootstrapping which help determine the accuracy of an estimate.  If the configured confidence_level is .95 (the default) then 95% of the estimates calculated when resampling the data were between the lower and upper bounds.  Lower and upper bounds will be close to the estimated value for high quality estimates.  You can hover over the "lower bound" or "upper bound" column titles to see the confidence level which was used.
                 </dd>
              </dl>
              <h3>Charts</h3>
@@ -3127,10 +3191,10 @@ R"***^***(       <div id="kde"></div>
                 </dd>
                 <dt>Raw Measurements</dt>
                 <dd>
-                    The raw measurements which were collected when benchmarking a function.  The x-axis is the number of iterations and the y-axis is the duration when running the function that number of iterations.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
+                    The raw measurements(number of iterations and duration) which were collected when benchmarking a function.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and you can select areas to zoom in.
+             You can hover over the any of the charts to see exact values and select areas to zoom in.
         </div>
     </body>
 </html>
@@ -3245,6 +3309,8 @@ private:
 #endif
 }
 
+#include <tuple>
+
 namespace velox {
 
 template <class C = DefaultClock>
@@ -3265,6 +3331,106 @@ struct Velox {
   Velox &bench(const std::string &name, F &&f) {
     benchmark<C>(name, std::forward<F>(f), config_, reporter_);
     return *this;
+  }
+
+  template <class F, class A>
+  Velox &bench_arg_list(const std::string &name, F &&f, std::initializer_list<A> args) {
+    static_assert(IsStreamInsertable<A>::value,
+                  "Arg does not have operator<<.  A custom formatter must be provided.");
+
+    bench_arg_list(name, std::forward<F>(f), args, Formatter());
+    return *this;
+  }
+
+  template <class F, class A, class Formatter>
+  Velox &bench_arg_list(const std::string &name,
+                        F &&f,
+                        std::initializer_list<A> args,
+                        Formatter &&formatter) {
+    for (auto &a : args) {
+      std::stringstream ss;
+      ss << name << " / ";
+      formatter(ss, a);
+
+      auto arg = std::tie(a);
+      bench_with_args(ss.str(), f, arg);
+    }
+
+    return *this;
+  }
+
+  template <class F, class... As>
+  Velox &
+  bench_args_list(const std::string &name, F &&f, std::initializer_list<std::tuple<As...>> args) {
+    static_assert(All<IsStreamInsertable<As>...>::value,
+                  "One or more args do not have operator<<.  A custom formatter must be provided.");
+
+    bench_args_list(name, std::forward<F>(f), args, TupleFormatter());
+    return *this;
+  }
+
+  template <class F, class... As, class Formatter>
+  Velox &bench_args_list(const std::string &name,
+                         F &&f,
+                         std::initializer_list<std::tuple<As...>> args,
+                         Formatter &&formatter) {
+    for (auto &a : args) {
+      std::stringstream ss;
+      ss << name << " / ";
+      formatter(ss, a);
+
+      bench_with_args(ss.str(), f, a);
+    }
+    return *this;
+  }
+
+private:
+  struct Formatter {
+    template <class T>
+    void operator()(std::ostream &os, const T &t) const {
+      os << t;
+    }
+  };
+
+  struct TupleFormatter {
+    template <class... Ts>
+    void operator()(std::ostream &os, const std::tuple<Ts...> &t) const {
+      operator()(os, t, MakeSeq<sizeof...(Ts)>());
+    }
+
+    template <class Tuple, std::size_t... Is>
+    void operator()(std::ostream &os, const Tuple &t, Seq<Is...>) const {
+      unused({0, (os << (Is == 0 ? "" : ", ") << std::get<Is>(t), void(), 0)...});
+    }
+  };
+
+  template <class F, class... As>
+  void bench_with_args(const std::string &name, F &f, const std::tuple<As...> &args) {
+    bench_with_args_impl(
+        name, f, args, MakeSeq<sizeof...(As)>(), IsCallable<F, Stopwatch &, As...>());
+  }
+
+  template <class F, class TupledArgs, std::size_t... Is>
+  void bench_with_args_impl(
+      const std::string &name, F &f, const TupledArgs &args, Seq<Is...>, std::true_type) {
+    static_assert(
+        IsCallable<F, Stopwatch &, decltype(std::get<Is>(args))...>::value,
+        "Function not callable with args.  Perhaps the function is taking non-const references?");
+
+    benchmark<C>(name,
+                 [&f, &args](Stopwatch &sw) { return f(sw, std::get<Is>(args)...); },
+                 config_,
+                 reporter_);
+  }
+
+  template <class F, class TupledArgs, std::size_t... Is>
+  void bench_with_args_impl(
+      const std::string &name, F &f, const TupledArgs &args, Seq<Is...>, std::false_type) {
+    static_assert(
+        IsCallable<F, decltype(std::get<Is>(args))...>::value,
+        "Function not callable with args.  Perhaps the function is taking non-const references?");
+
+    benchmark<C>(name, [&f, &args] { return f(std::get<Is>(args)...); }, config_, reporter_);
   }
 
 private:

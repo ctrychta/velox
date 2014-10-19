@@ -8,6 +8,9 @@
 #include <cassert>
 #include <chrono>
 #include <string>
+#include <sstream>
+#include <initializer_list>
+#include <atomic>
 
 #ifdef _MSC_VER
 #include "msvc_util.h"
@@ -42,6 +45,53 @@ template <class... Ts>
 void unused(Ts &&...) {
 }
 
+template <class T>
+void unused(std::initializer_list<T> &&) {
+}
+
+template <std::size_t...>
+struct Seq {
+  using type = Seq;
+};
+
+template <class S1, class S2>
+struct SeqBuilder;
+
+template <std::size_t... I1, std::size_t... I2>
+struct SeqBuilder<Seq<I1...>, Seq<I2...>> : Seq<I1..., (sizeof...(I1)+I2)...> {};
+
+template <class S1, class S2>
+using BuildSeq = Invoke<SeqBuilder<S1, S2>>;
+
+template <std::size_t N>
+struct SeqMaker;
+
+template <std::size_t N>
+using MakeSeq = Invoke<SeqMaker<N>>;
+
+template <std::size_t N>
+struct SeqMaker : BuildSeq<MakeSeq<N / 2>, MakeSeq<N - N / 2>> {};
+
+template <>
+struct SeqMaker<0> : Seq<> {};
+template <>
+struct SeqMaker<1> : Seq<0> {};
+
+template <bool B, class...>
+struct DependentBool : std::integral_constant<bool, B> {};
+
+template <bool B, class... Ts>
+using Bool = Invoke<DependentBool<B, Ts...>>;
+
+template <class If, class Then, class Else>
+using Conditional = Invoke<std::conditional<If::value, Then, Else>>;
+
+template <class... Ts>
+struct All : Bool<true> {};
+
+template <class Head, class... Tail>
+struct All<Head, Tail...> : Conditional<Head, All<Tail...>, Bool<false>> {};
+
 namespace adl {
   using std::begin;
   template <class Range, class Ret = decltype(begin(std::declval<Range>()))>
@@ -69,6 +119,17 @@ struct CallTester {
 
 template <class F, class... Args>
 struct IsCallable : decltype(CallTester::test<F, Args...>(0)) {};
+
+struct StreamInsertTester {
+  template <class T>
+  static decltype(std::declval<std::ostream &>() << std::declval<T>(), std::true_type()) test(int);
+
+  template <class T>
+  static std::false_type test(...);
+};
+
+template <class T>
+struct IsStreamInsertable : decltype(StreamInsertTester::test<T>(0)) {};
 
 using Ns = std::chrono::nanoseconds;
 using FpNs = std::chrono::duration<double, std::nano>;

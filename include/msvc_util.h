@@ -12,8 +12,11 @@
 namespace velox {
 template <class T>
 void optimization_barrier(T &&t) {
+  const char *p = reinterpret_cast<const char *>(&t);
+  std::atomic_signal_fence(std::memory_order_seq_cst);
+
   if (volatile bool b = false) {
-    _exit(*reinterpret_cast<const char *>(&t));
+    _exit(*p);
   }
 }
 

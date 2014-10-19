@@ -581,7 +581,7 @@ R"***^***(       <div id="kde"></div>
             <dl>
                 <dt>MAD (Median Absolute Deviation)</dt>
                 <dd>
-                    The interval (median - MAD, median + MAD) contains half of the measured values.  Unlike the standard deviation the MAD is resilient to outliers.
+                    The interval [median - MAD, median + MAD] contains half of the measured values.  Unlike the standard deviation the MAD is resilient to outliers.
                 </dd>
                 <dt>LLS (Least Linear Squares)</dt>
                 <dd>
@@ -593,7 +593,7 @@ R"***^***(       <div id="kde"></div>
                 </dd>
                 <dt>lower/upper bound</dt>
                 <dd>
-                    Confidence intervals calculated using bootstrapping.
+                    Confidence intervals calculated using bootstrapping which help determine the accuracy of an estimate.  If the configured confidence_level is .95 (the default) then 95% of the estimates calculated when resampling the data were between the lower and upper bounds.  Lower and upper bounds will be close to the estimated value for high quality estimates.  You can hover over the "lower bound" or "upper bound" column titles to see the confidence level which was used.   
                 </dd>        
              </dl>
              <h3>Charts</h3>
@@ -608,10 +608,10 @@ R"***^***(       <div id="kde"></div>
                 </dd>
                 <dt>Raw Measurements</dt>
                 <dd>
-                    The raw measurements which were collected when benchmarking a function.  The x-axis is the number of iterations and the y-axis is the duration when running the function that number of iterations.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
+                    The raw measurements(number of iterations and duration) which were collected when benchmarking a function.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and you can select areas to zoom in.
+             You can hover over the any of the charts to see exact values and select areas to zoom in.
         </div>
     </body>
 </html>
