@@ -40,16 +40,16 @@ struct Velox {
   }
 
   template <class F, class A>
-  Velox &bench_arg_list(const std::string &name, F &&f, std::initializer_list<A> args) {
+  Velox &bench_with_arg(const std::string &name, F &&f, std::initializer_list<A> args) {
     static_assert(IsStreamInsertable<A>::value,
                   "Arg does not have operator<<.  A custom formatter must be provided.");
 
-    bench_arg_list(name, std::forward<F>(f), args, Formatter());
+    bench_with_arg(name, std::forward<F>(f), args, Formatter());
     return *this;
   }
 
   template <class F, class A, class Formatter>
-  Velox &bench_arg_list(const std::string &name,
+  Velox &bench_with_arg(const std::string &name,
                         F &&f,
                         std::initializer_list<A> args,
                         Formatter &&formatter) {
@@ -59,7 +59,7 @@ struct Velox {
       formatter(ss, a);
 
       auto arg = std::tie(a);
-      bench_with_args(ss.str(), f, arg);
+      bench_with_args_impl(ss.str(), f, arg);
     }
 
     return *this;
@@ -67,16 +67,16 @@ struct Velox {
 
   template <class F, class... As>
   Velox &
-  bench_args_list(const std::string &name, F &&f, std::initializer_list<std::tuple<As...>> args) {
+  bench_with_args(const std::string &name, F &&f, std::initializer_list<std::tuple<As...>> args) {
     static_assert(All<IsStreamInsertable<As>...>::value,
                   "One or more args do not have operator<<.  A custom formatter must be provided.");
 
-    bench_args_list(name, std::forward<F>(f), args, TupleFormatter());
+    bench_with_args(name, std::forward<F>(f), args, TupleFormatter());
     return *this;
   }
 
   template <class F, class... As, class Formatter>
-  Velox &bench_args_list(const std::string &name,
+  Velox &bench_with_args(const std::string &name,
                          F &&f,
                          std::initializer_list<std::tuple<As...>> args,
                          Formatter &&formatter) {
@@ -85,8 +85,9 @@ struct Velox {
       ss << name << " / ";
       formatter(ss, a);
 
-      bench_with_args(ss.str(), f, a);
+      bench_with_args_impl(ss.str(), f, a);
     }
+
     return *this;
   }
 
@@ -111,7 +112,7 @@ private:
   };
 
   template <class F, class... As>
-  void bench_with_args(const std::string &name, F &f, const std::tuple<As...> &args) {
+  void bench_with_args_impl(const std::string &name, F &f, const std::tuple<As...> &args) {
     bench_with_args_impl(
         name, f, args, MakeSeq<sizeof...(As)>(), IsCallable<F, Stopwatch &, As...>());
   }
