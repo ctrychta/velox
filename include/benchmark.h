@@ -76,7 +76,7 @@ std::pair<Measurements, bool> measure(F &&f, const VeloxConfig &config, Reporter
   const auto wu_result = b.warm_up(config.warm_up_time());
   const auto &wu = wu_result.first;
 
-  if (!wu_result.second) {
+  if (!wu_result.second || !wu.duration().count()) {
     reporter.warm_up_failed(wu);
     return {Measurements(), false};
   }

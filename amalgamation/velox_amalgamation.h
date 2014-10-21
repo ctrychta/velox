@@ -40,8 +40,7 @@
 #include <Windows.h>
 #include <process.h>
 
-// This is a hack because MSVC doesn't handle decltype in template aliases
-// correctly
+// This is a hack because MSVC doesn't handle decltype in template aliases correctly
 #define VELOX_RVT(r) Unqual<decltype(*adl::adl_begin(std::declval<r>()))>
 
 namespace velox {
@@ -55,8 +54,8 @@ void optimization_barrier(T &&t) {
   }
 }
 
-// On windows XP and up these functions are documented to never fail so the
-// return values are not checked
+// On windows XP and up QueryPerformanceFrequency and QueryPerformanceCounter are documented to
+// never fail so the return values are not checked
 namespace {
   const double QPC_NANOS_PER_TICK = []() -> double {
     LARGE_INTEGER frequency;
@@ -81,6 +80,32 @@ struct WindowsHighResolutionClock {
 
 using DefaultClock = WindowsHighResolutionClock;
 
+struct ProcessCPUClock {
+  using rep = std::int64_t;
+  using period = std::nano;
+  using duration = std::chrono::duration<rep, period>;
+  using time_point = std::chrono::time_point<ProcessCPUClock>;
+  static const bool is_steady = true;
+
+  static time_point now() {
+    FILETIME creation, exit, kernel, user;
+    if (GetProcessTimes(GetCurrentProcess(), &creation, &exit, &kernel, &user)) {
+      auto to_nanos = [](FILETIME ft) -> ULONGLONG {
+        ULARGE_INTEGER li;
+        li.LowPart = ft.dwLowDateTime;
+        li.HighPart = ft.dwHighDateTime;
+        // ft has units of 100ns
+        return li.QuadPart * 100;
+      };
+
+      return time_point(duration(static_cast<rep>(to_nanos(kernel) + to_nanos(user))));
+    }
+
+    assert(false && "GetProcessTimes failed");
+    return time_point();
+  }
+};
+
 namespace detail {
   template <class T>
   std::string unmangled_name() {
@@ -92,6 +117,7 @@ namespace detail {
 #else
 
 #include <cxxabi.h>
+#include <time.h>
 
 #define VELOX_RVT(r) RangeValueType<r>
 
@@ -102,6 +128,28 @@ template <class T>
 void optimization_barrier(T &&t) {
   __asm__ __volatile__("" : "+r"(t));
 }
+
+struct ProcessCPUClock {
+  using rep = std::int64_t;
+  using period = std::nano;
+  using duration = std::chrono::duration<rep, period>;
+  using time_point = std::chrono::time_point<ProcessCPUClock>;
+  static const bool is_steady = true;
+
+  static time_point now() {
+    timespec ts;
+
+    if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) == 0) {
+      rep d = ts.tv_sec;
+      d *= 1000000000;
+      d += ts.tv_nsec;
+      return time_point(duration(d));
+    }
+
+    assert(false && "clock_gettime failed");
+    return time_point();
+  }
+};
 
 namespace detail {
   template <class T>
@@ -1394,7 +1442,7 @@ std::pair<Measurements, bool> measure(F &&f, const VeloxConfig &config, Reporter
   const auto wu_result = b.warm_up(config.warm_up_time());
   const auto &wu = wu_result.first;
 
-  if (!wu_result.second) {
+  if (!wu_result.second || !wu.duration().count()) {
     reporter.warm_up_failed(wu);
     return {Measurements(), false};
   }
