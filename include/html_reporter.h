@@ -13,7 +13,16 @@ struct HtmlReporter : Reporter {
 
   HtmlReporter &operator=(const HtmlReporter &rhs) = delete;
 
-  void suite_starting(const std::string &, bool) override { os_ << template_begin() << "\n"; }
+  void suite_starting(const std::string &clock, bool is_steady) override {
+    os_ << template_begin() << "\n";
+
+    os_ << "var clockInfo = {\n";
+    os_ << "    name : '" << js_string_escape(clock) << "',\n";
+    os_ << "    steadiness : '" << (is_steady ? "steady" : "unsteady") << "',\n";
+    os_ << "};\n\n";
+
+    os_ << "var benchmarkData = {\n";
+  }
 
   void benchmark_starting(const std::string &name) override { current_benchmark_ = name; }
 
@@ -50,7 +59,10 @@ struct HtmlReporter : Reporter {
     os_ << "},\n";
   }
 
-  void suite_ended() override { os_ << template_end() << "\n"; }
+  void suite_ended() override {
+    os_ << "};\n";
+    os_ << template_end() << "\n";
+  }
 
 private:
   template <class E, class F>

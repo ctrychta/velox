@@ -755,9 +755,7 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
         </script>
         
         <script>        
-            var benchmarkData = {
-                /*****PLACEHOLDER FOR benchmarkData*****/
-            };
+            /*****PLACEHOLDER FOR benchmarkData*****/
         
             //http://bl.ocks.org/mbostock/5577023
         
@@ -1075,7 +1073,9 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
                     
                     updateData(target.attr('id'));
                 });
-                              
+                            
+                $('#clock-name').text(clockInfo.name);
+                $('#steadiness').text(clockInfo.steadiness);   
                 updateData('benchmark_1');
             });
         </script>
@@ -1232,6 +1232,11 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
             #info dd {
                 margin-bottom:5px;
             }
+            
+            #clock-info {
+                color: #9A9FA4;
+                margin-bottom: 0;
+            }
         </style>
         
     </head>
@@ -1367,7 +1372,8 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
                     The raw measurements(number of iterations and duration) which were collected when benchmarking a function.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and select areas to zoom in.
+             <p>You can hover over the any of the charts to see exact values and select areas to zoom in.</p>
+             <p id="clock-info">All times measured with <span id="clock-name"></span> which is <span id="steadiness"></span>.</p>
         </div>
     </body>
 </html>

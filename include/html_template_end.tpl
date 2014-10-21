@@ -1,5 +1,4 @@
 R"***^***(
-            };
         
             //http://bl.ocks.org/mbostock/5577023
         
@@ -257,9 +256,9 @@ R"***^***(
                     kdeChart.redraw(false);
                     
                     setSeries(samplesChart.get('sample'), benchData.samples.data);
-                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereD)***^***",
-R"***^***(ata);
-                    setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
+                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereData);
+         )***^***",
+R"***^***(           setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
                     setSeries(samplesChart.get('lowMild'), benchData.samples.lowMildData);
                     setSeries(samplesChart.get('lowSevere'), benchData.samples.lowSevereData);
                     samplesChart.redraw(false);
@@ -318,7 +317,9 @@ R"***^***(ata);
                     
                     updateData(target.attr('id'));
                 });
-                              
+                            
+                $('#clock-name').text(clockInfo.name);
+                $('#steadiness').text(clockInfo.steadiness);   
                 updateData('benchmark_1');
             });
         </script>
@@ -475,6 +476,11 @@ R"***^***(ata);
             #info dd {
                 margin-bottom:5px;
             }
+            
+            #clock-info {
+                color: #9A9FA4;
+                margin-bottom: 0;
+            }
         </style>
         
     </head>
@@ -560,7 +566,8 @@ R"***^***(ata);
 		                <tr>
 			                <td>r&sup2;</td>
 			                <td id="r2-lb"></td>
-			                <td id="r2-estimate"></td>
+			       )***^***",
+R"***^***(         <td id="r2-estimate"></td>
 			                <td id="r2-up"></td>
 		                </tr>
 	                </tbody>
@@ -568,8 +575,7 @@ R"***^***(ata);
 
                 <div id="separator"></div>
                 
-         )***^***",
-R"***^***(       <div id="kde"></div>
+                <div id="kde"></div>
 
                 <div id="samples"></div>
                 
@@ -611,7 +617,8 @@ R"***^***(       <div id="kde"></div>
                     The raw measurements(number of iterations and duration) which were collected when benchmarking a function.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and select areas to zoom in.
+             <p>You can hover over the any of the charts to see exact values and select areas to zoom in.</p>
+             <p id="clock-info">All times measured with <span id="clock-name"></span> which is <span id="steadiness"></span>.</p>
         </div>
     </body>
 </html>

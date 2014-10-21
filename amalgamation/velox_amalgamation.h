@@ -1643,7 +1643,16 @@ struct HtmlReporter : Reporter {
 
   HtmlReporter &operator=(const HtmlReporter &rhs) = delete;
 
-  void suite_starting(const std::string &, bool) override { os_ << template_begin() << "\n"; }
+  void suite_starting(const std::string &clock, bool is_steady) override {
+    os_ << template_begin() << "\n";
+
+    os_ << "var clockInfo = {\n";
+    os_ << "    name : '" << js_string_escape(clock) << "',\n";
+    os_ << "    steadiness : '" << (is_steady ? "steady" : "unsteady") << "',\n";
+    os_ << "};\n\n";
+
+    os_ << "var benchmarkData = {\n";
+  }
 
   void benchmark_starting(const std::string &name) override { current_benchmark_ = name; }
 
@@ -1680,7 +1689,10 @@ struct HtmlReporter : Reporter {
     os_ << "},\n";
   }
 
-  void suite_ended() override { os_ << template_end() << "\n"; }
+  void suite_ended() override {
+    os_ << "};\n";
+    os_ << template_end() << "\n";
+  }
 
 private:
   template <class E, class F>
@@ -2619,8 +2631,7 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
         </script>
 
         <script>
-            var benchmarkData = {
-                )***^***"
+            )***^***"
     };
 
     static const std::string s = string_from_cstrs(pieces);
@@ -2630,7 +2641,6 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
   static const std::string &template_end() {
     static const char *const pieces[] = {
 R"***^***(
-            };
 
             //http://bl.ocks.org/mbostock/5577023
 
@@ -2888,9 +2898,9 @@ R"***^***(
                     kdeChart.redraw(false);
 
                     setSeries(samplesChart.get('sample'), benchData.samples.data);
-                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereD)***^***",
-R"***^***(ata);
-                    setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
+                    setSeries(samplesChart.get('highSevere'), benchData.samples.highSevereData);
+         )***^***",
+R"***^***(           setSeries(samplesChart.get('highMild'), benchData.samples.highMildData);
                     setSeries(samplesChart.get('lowMild'), benchData.samples.lowMildData);
                     setSeries(samplesChart.get('lowSevere'), benchData.samples.lowSevereData);
                     samplesChart.redraw(false);
@@ -2950,6 +2960,8 @@ R"***^***(ata);
                     updateData(target.attr('id'));
                 });
 
+                $('#clock-name').text(clockInfo.name);
+                $('#steadiness').text(clockInfo.steadiness);
                 updateData('benchmark_1');
             });
         </script>
@@ -3106,6 +3118,11 @@ R"***^***(ata);
             #info dd {
                 margin-bottom:5px;
             }
+
+            #clock-info {
+                color: #9A9FA4;
+                margin-bottom: 0;
+            }
         </style>
 
     </head>
@@ -3191,7 +3208,8 @@ R"***^***(ata);
 		                <tr>
 			                <td>r&sup2;</td>
 			                <td id="r2-lb"></td>
-			                <td id="r2-estimate"></td>
+			       )***^***",
+R"***^***(         <td id="r2-estimate"></td>
 			                <td id="r2-up"></td>
 		                </tr>
 	                </tbody>
@@ -3199,8 +3217,7 @@ R"***^***(ata);
 
                 <div id="separator"></div>
 
-         )***^***",
-R"***^***(       <div id="kde"></div>
+                <div id="kde"></div>
 
                 <div id="samples"></div>
 
@@ -3242,7 +3259,8 @@ R"***^***(       <div id="kde"></div>
                     The raw measurements(number of iterations and duration) which were collected when benchmarking a function.  The regression line is created from the calculated LLS value.  All points should be on or very near the regression line.
                 </dd>
              </dl>
-             You can hover over the any of the charts to see exact values and select areas to zoom in.
+             <p>You can hover over the any of the charts to see exact values and select areas to zoom in.</p>
+             <p id="clock-info">All times measured with <span id="clock-name"></span> which is <span id="steadiness"></span>.</p>
         </div>
     </body>
 </html>

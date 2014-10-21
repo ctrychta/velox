@@ -780,5 +780,4 @@ charts:W,dateFormat:cb,format:Ja,pathAnim:vb,getOptions:function(){return E},has
         </script>
         
         <script>        
-            var benchmarkData = {
-                )***^***"
+            )***^***"
