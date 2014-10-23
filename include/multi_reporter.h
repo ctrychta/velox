@@ -43,8 +43,9 @@ struct MultiReporter : Reporter {
 
   void benchmark_ended() override { call(fp(&Reporter::benchmark_ended)); }
 
-  void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) override {
-    call(fp(&Reporter::measurement_collection_starting), sample_size, measurement_time);
+  void measurement_collection_starting(std::uint32_t num_measurements,
+                                       FpNs measurement_time) override {
+    call(fp(&Reporter::measurement_collection_starting), num_measurements, measurement_time);
   }
 
   void measurement_collection_ended(const Measurements &measurements,
