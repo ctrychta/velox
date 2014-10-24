@@ -1177,8 +1177,9 @@ struct Reporter {
   virtual void benchmark_starting(const std::string &name) { unused(name); }
   virtual void benchmark_ended() {}
 
-  virtual void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) {
-    unused(sample_size, measurement_time);
+  virtual void measurement_collection_starting(std::uint32_t num_measurements,
+                                               FpNs measurement_time) {
+    unused(num_measurements, measurement_time);
   }
 
   virtual void measurement_collection_ended(const Measurements &measurements,
@@ -1545,8 +1546,9 @@ struct TextReporter : Reporter {
     os_ << "  > The function is unable to be benchmarked because it takes so little time.\n";
   }
 
-  void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) override {
-    os_ << "> Collecting " << sample_size << " measurements in estimated ";
+  void measurement_collection_starting(std::uint32_t num_measurements,
+                                       FpNs measurement_time) override {
+    os_ << "> Collecting " << num_measurements << " measurements in estimated ";
 
     format_time(os_, measurement_time);
     os_ << "\n";
@@ -3321,8 +3323,9 @@ struct MultiReporter : Reporter {
 
   void benchmark_ended() override { call(fp(&Reporter::benchmark_ended)); }
 
-  void measurement_collection_starting(std::uint32_t sample_size, FpNs measurement_time) override {
-    call(fp(&Reporter::measurement_collection_starting), sample_size, measurement_time);
+  void measurement_collection_starting(std::uint32_t num_measurements,
+                                       FpNs measurement_time) override {
+    call(fp(&Reporter::measurement_collection_starting), num_measurements, measurement_time);
   }
 
   void measurement_collection_ended(const Measurements &measurements,

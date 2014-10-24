@@ -3,7 +3,81 @@ velox
 
 A C++ micro-benchmarking library inspired by Haskell's [criterion](https://hackage.haskell.org/package/criterion).  Velox calculates various statistics for the functions being benchmarked and comes with reporters to generate html reports and textual summaries.
 
-##Example
+##Tutorial
+`Velox` takes an optional template parameter which specifies the clock to use when benchmarking.  The constructor takes a reporter and an optional `VeloxConfig`.  Once a `Velox` instance is constructed the various `bench` members can be used to run benchmarks on different callables.  A simple benchmark for the creation/destruction of a `std::vector` of 100,000 elements which outputs a summary to stdout looks like this:
+```cpp
+#include "velox_amalgamation.h"
+#include <iostream>
+
+int main() {
+  velox::TextReporter text_reporter{std::cout};
+  velox::Velox<> v(text_reporter);
+  v.bench("vector allocation/deallocation", [] { std::vector<int> v(100000); });
+}
+```
+
+If the code you're benchmarking has some setup or teardown logic which shouldn't be timed you can take a `velox::Stopwatch &` as a parameter and use the `measure` member function.  Be aware that the setup/teardown code will only be once per measurement.  Each measurement will consist of multiple calls of the callable passed to `measure`.  Using measure looks like this:
+
+```cpp
+#include "velox_amalgamation.h"
+#include <iostream>
+
+int main() {
+  velox::TextReporter text_reporter{std::cout};
+  velox::Velox<> v(text_reporter);
+  v.bench("measure example", [](velox::Stopwatch &sw) {
+    // setup
+    std::vector<int> v(100000);
+    std::iota(v.begin(), v.end(), 0);
+
+    sw.measure([&] { std::find(v.begin(), v.end(), 94500 ); });
+    // teardown
+  });
+}
+```
+
+If you try running the example above you'll likely see an error similar to:
+```
+> Warm up failed
+  > 9223372036854775808 iterations of the function took 121.00 ns
+  > The function is unable to be benchmarked because it takes so little time
+```
+
+The compiler saw that the result of `std::find` wasn't being used and eliminated it.  Velox provides `velox::optimization_barrier` to help prevent dead code elimination.  It's used like this:
+
+```cpp
+#include "velox_amalgamation.h"
+#include <iostream>
+
+int main() {
+  velox::TextReporter text_reporter{std::cout};
+  velox::Velox<> v(text_reporter);
+  v.bench("measure example", [](velox::Stopwatch &sw) {
+    std::vector<int> v(100000);
+    std::iota(v.begin(), v.end(), 0);
+    sw.measure([&] { velox::optimization_barrier(std::find(v.begin(), v.end(), 94500)); });
+  });
+}
+```
+
+`Velox` also has functions for benchmarking with different arguments. `bench_with_arg` takes an `std::initializer_list<>` and will pass each element to the function being benchmarked. `bench_with_args` takes an `std::initializer_list<std::tuple<>>` and will call the function with the elements of each tuple.  Using these member functions looks something like this:
+
+```cpp
+#include "velox_amalgamation.h"
+#include <iostream>
+
+int main() {
+  velox::TextReporter text_reporter{std::cout};
+  velox::Velox<> v(text_reporter);
+  v.bench_with_arg("arg example", [](unsigned n) { std::vector<int> v(n); }, {100000u, 500000u});
+  v.bench_with_args("args example",
+                    [](unsigned a, unsigned b) { std::vector<int> v(a + b); },
+                    {std::make_tuple(10000u, 20000u)});
+}
+```
+
+The examples so far have used the built in `TextReporter`; however, a `HtmlReporter` is also provided and you can  derive your own custom reporters from `velox::Reporter`.  `Velox` takes a single reporter through it's constructor, but the `MultiReporter` utility class can be used if you want to use multiple reporters. An example using multiple reporters looks like this:
+
 ```cpp
 #include "velox_amalgamation.h"
 #include <iostream>
